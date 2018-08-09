@@ -1,0 +1,214 @@
+<template>
+  <view class="container">
+    <view class='shelf-name'>
+      <image lazy-load src='/images/shelf/address.png' alt='' /> {{shelf.shelfName}}
+    </view>
+    <view class='main row'>
+      <SideTab :tabs.sync='cates' @change.user='switchTab' />
+      <scroll-view scroll-y scroll-with-animation class='goods-box' bindscrolltolower='onReachBottom' bindscroll="scroll" scroll-into-view='{{currentView}}'>
+        <view class='goods-list'>
+          <repeat for='{{cates.list}}' item='item' key='categoryNo'>
+            <view id='cate{{item.categoryNo}}'>
+              <view class='cate-name' id='cateName{{item.categoryNo}}'>
+                <view class='line'></view>
+                {{item.categoryName}}
+              </view>
+              <view id='good{{item.categoryNo}}'>
+                <Goods :cate.sync='item' @changeGoods.user='changeGoods'></Goods>
+              </view>
+            </view>
+          </repeat>
+        </view>
+      </scroll-view>
+    </view>
+    <Cart :shop.sync='shelf' :selectedGoods.sync='selectedGoods' />
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  import SideTab from './sideTab'
+  import Goods from './goods'
+  import Cart from './cart'
+  import api from '@/api/shelf'
+  export default class Index extends wepy.page {
+    data = {
+      shelf: {},
+      shelfNo: 'aea6c7b16dd345afabb489302f01b0a4',
+      cates: {
+        'selectedId': '',
+        list: []
+      },
+      currentView: '',
+      catesHeight: {},
+      cateNos: [],
+      selectedGoods: [],
+      selectedId: '',
+      decreateAnimation: ''
+    }
+    async onLoad() {
+      api.getShelfInfo({
+        shelfNo: this.shelfNo
+      }).then(res => {
+        this.shelf = res.data.data
+        this.$apply()
+      })
+      api.getCatesAndGoodsList({
+        shelfNo: this.shelfNo
+      }).then(res => {
+        this.cates.list = res.data.data
+        this.cates.selectedId = res.data.data[0]['categoryNo']
+        this.currentView = `cateName${res.data.data[0]['categoryNo']}`
+        this.$apply()
+        setTimeout(() => {
+          res.data.data.forEach(item => {
+            let query = wepy.createSelectorQuery()
+            query.select(`#cate${item.categoryNo}`).boundingClientRect()
+            query.exec((res) => {
+              this.cateNos.push(item.categoryNo)
+              if (res[0]) {
+                this.catesHeight[item.categoryNo] = res[0].height
+              }
+              this.$apply()
+            })
+          })
+        }, 1)
+      })
+      this.decreateAnimation = wepy.createAnimation({
+        timingFuncton: 'ease'
+      })
+    }
+    methods = {
+      switchTab(selectedId) {
+        if (this.currentView === `cateName${selectedId}`) {
+          this.currentView = ''
+          this.$apply()
+          setTimeout(() => {
+            this.currentView = `cateName${selectedId}`
+            this.cates.selectedId = selectedId
+            this.$apply()
+          }, 1)
+        } else {
+          this.currentView = `cateName${selectedId}`
+          this.cates.selectedId = selectedId
+          this.$apply()
+        }
+      },
+      scroll(e) {
+        let height = 0
+        const currentCateNo = this.cateNos.find(cateNo => {
+          height += this.catesHeight[cateNo]
+          return height > e.detail.scrollTop
+        })
+        this.cates.selectedId = currentCateNo
+        this.$apply()
+      },
+      changeGoods(event) {
+        event.item['count'] = event.item['count'] ? event.item['count'] : 0
+        const goodsIndex = event.cate.clientGoodsVOList.findIndex((data) => {
+          return data.goodsNo === event.item.goodsNo
+        })
+        const cateIndex = this.cates.list.findIndex((data) => {
+          return data.categoryNo === event.cate.categoryNo
+        })
+        if (event.type === 'add') {
+          this.addGood(event, goodsIndex, cateIndex)
+        } else if (event.type === 'decrease') {
+          this.decreaseGood(event, goodsIndex, cateIndex)
+        }
+      }
+    }
+    addGood(event, goodsIndex, cateIndex) {
+      if (event.item.isDecreaseShow) {
+        event.item.count = event.item.count + 1
+        this.cates['list'][cateIndex]['clientGoodsVOList'][goodsIndex] = event.item
+        this.$apply()
+      } else {
+        this.decreateAnimation.translateX(24).step({
+          duration: 1
+        })
+        event.item['animation'] = this.decreateAnimation.export()
+        this.cates['list'][cateIndex]['clientGoodsVOList'][goodsIndex] = event.item
+        this.$apply()
+        setTimeout(() => {
+          this.decreateAnimation.opacity(1).translateX(0).step({
+            duration: 300
+          })
+          event.item['animation'] = this.decreateAnimation.export()
+          event.item.isDecreaseShow = true
+          event.item.count = event.item.count + 1
+          this.cates['list'][cateIndex]['clientGoodsVOList'][goodsIndex] = event.item
+          this.$apply()
+        }, 0)
+      }
+      // 小球下落动画
+      this.$com.Cart.methods.animate.call(this.$com.Cart, `add${event.item.goodsNo}`)
+    }
+    decreaseGood(event, goodsIndex, cateIndex) {
+      if (event.item.count > 0) {
+        event.item.count = event.item.count - 1
+        this.cates['list'][cateIndex]['clientGoodsVOList'][goodsIndex] = event.item
+        if (event.item.count === 0) {
+          this.decreateAnimation.opacity(0).translateX(24).step({
+            duration: 300
+          })
+          event.item['animation'] = this.decreateAnimation.export()
+        }
+        this.$apply()
+      }
+    }
+    components = {
+      SideTab: SideTab,
+      Goods: Goods,
+      Cart: Cart
+    }
+  }
+</script>
+
+<style lang="less">
+  .main {
+    position: absolute;
+    top: 82rpx;
+    bottom: 110rpx;
+    width: 100%;
+  }
+  .goods-box {
+    flex: 1;
+    height: 100%;
+    .goods-list {
+      background-color: #ffffff;
+      .line {
+        width: 6rpx;
+        height: 24rpx;
+        border-radius: 3rpx;
+        display: inline-block;
+        background-color: #ffda09;
+        vertical-align: middle;
+        margin-right: 20px;
+      }
+      .cate-name {
+        padding-left: 7rpx;
+        height: 90rpx;
+        line-height: 90rpx;
+        font-size: 13px;
+        color: #222222;
+        background-color: #ffffff;
+        border-bottom: 1rpx solid #e5e5e5;
+      }
+    }
+  }
+  .shelf-name {
+    width: 100%;
+    height: 80rpx;
+    line-height: 80rpx;
+    text-align: left;
+    border-bottom: 1rpx solid #F0F0F0;
+    background-color: #FFFFFF;
+    image {
+      width: 20rpx;
+      height: 24rpx;
+      vertical-align: middle;
+      margin: -6px 10px 0 30px;
+    }
+  }
+</style>

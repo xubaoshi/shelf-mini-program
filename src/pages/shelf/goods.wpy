@@ -1,0 +1,154 @@
+<template>
+  <view class='cate-goods'>
+    <repeat for='{{cate.clientGoodsVOList}}' item='item' key='goodsNo'>
+      <view class='goods-item row'>
+        <view class='goods-image'>
+          <image lazy-load src='{{item.coverImage}}' />
+        </view>
+        <view class='content row-between'>
+          <view class='title'>
+            <view class='name'>{{item.goodsName}}</view>
+            <view class='price'>
+              <view class='now'>¥{{item.price}}</view>
+            </view>
+          </view>
+          <!-- <Operator :good.sync='item' @change.user='num' /> -->
+          <view class='operator-wrapper'>
+            <view class='operator'>
+              <view @tap="decrease({{item}})" animation='{{item.animation}}' class='icon-wrapper decrease'>
+                <view class="icon">-</view>
+              </view>
+              <view class="count" wx:if='{{item.count > 0}}'>{{item.count}}</view>
+              <view id='add{{item.goodsNo}}' @tap="add({{item}})" class="icon-wrapper add">
+                <view class="icon">+</view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </repeat>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  export default class GoodsItem extends wepy.component {
+    props = {
+      cate: {}
+    }
+    methods = {
+      add(item) {
+        this.$emit('changeGoods', {
+          item,
+          cate: this.cate,
+          type: 'add'
+        })
+      },
+      decrease(item) {
+        this.$emit('changeGoods', {
+          item,
+          cate: this.cate,
+          type: 'decrease'
+        })
+      }
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+  @import '../../styles/variable';
+  .goods-item {
+    display: flex;
+    position: relative;
+    margin: 20rpx;
+    padding: 10rpx;
+    background-color: #ffffff;
+    &:after {
+      display: block;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      border-top: 1rpx solid #e5e5e5;
+      content: ' ';
+    }
+    &:last-child {
+      margin-bottom: 0;
+      &:after {
+        display: none;
+      }
+    }
+    .goods-image {
+      overflow: hidden;
+      width: 120rpx;
+      height: 120rpx;
+      margin-right: 10rpx;
+      background-image: url('../../images/shelf/default.png');
+      background-size: 120px 120px;
+      image {
+        width: 100%;
+        height: 100%;
+      }
+    }
+    .content {
+      flex: 1;
+      .title {
+        width: 320rpx;
+        .name {
+          margin-bottom: 10rpx;
+          font-size: 14px;
+          height: 80rpx;
+          line-height: 40rpx;
+          overflow: hidden;
+        }
+        .now {
+          font-weight: bold;
+          margin-right: 8rpx;
+          line-height: 1.5;
+          font-size: 15px;
+          color: #f12c20;
+        }
+      }
+    }
+  }
+  .operator-wrapper {
+    position: absolute;
+    right: -15rpx;
+    bottom: 5rpx;
+    .icon-wrapper {
+      display: inline-block;
+      padding: 7.5rpx;
+    }
+    .icon {
+      width: 40rpx;
+      height: 40rpx;
+      line-height: 40rpx;
+      text-align: center;
+      border-radius: 6rpx;
+      display: inline-block;
+      font-size: 18px;
+    }
+    .add {
+      .icon {
+        border: 1rpx solid #ffda09;
+        background-color: #ffda09;
+      }
+    }
+    .decrease {
+      opacity: 0;
+      .icon {
+        opacity: 0.6;
+        border: 0.5rpx solid #979797;
+        background-color: #ffffff;
+      }
+    }
+    .count {
+      display: inline-block;
+      line-height: 46rpx;
+      text-align: center;
+      font-size: 14px;
+      min-width: 20rpx;
+      margin-top: 18rpx;
+    }
+  }
+</style>

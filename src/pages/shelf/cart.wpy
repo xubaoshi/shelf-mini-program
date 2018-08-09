@@ -1,0 +1,195 @@
+<template>
+  <view class='cart-wrapper'>
+    <view class='cart'>
+      <view class='content' @tap="toggleList">
+        <view class='content-left'>
+          <view class='logo-wrapper'>
+            <view class='logo'>
+              <image src='../../images/shelf/cart.png' />
+            </view>
+            <view class='num' wx:if='{{count > 0}}'>{{count}}</view>
+          </view>
+        </view>
+        <view class='content-right'>
+          <view class='pay enough' @tap.stop="animate">去结算</view>
+        </view>
+      </view>
+      <view class='ball-container'>
+        <repeat for='{{balls}}' item='item' key='id'>
+          <view animation="{{borderAnimationData}}" class='ball'>
+            <view animation="{{innerAnimationData}}" class='inner'></view>
+          </view>
+        </repeat>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy'
+  export default class Card extends wepy.component {
+    props = {
+      shop: {
+        type: Object
+      },
+      selectedGoods: {
+        type: Array
+      }
+    }
+    data = {
+      balls: [{
+        id: '1',
+        show: false
+      }],
+      borderAnimationData: {},
+      innerAnimationData: {}
+    }
+    computed = {
+      count() {
+        let num = 0
+        this.selectedGoods.forEach(item => {
+          num += item.count
+        })
+        return num
+      }
+    }
+    methods = {
+      toggleList() {
+        console.log('this is toggle')
+      },
+      animate(targetId) {
+        const windowHeight = wepy.getSystemInfoSync().windowHeight
+        let query = wepy.createSelectorQuery()
+        query.select(`#${targetId}`).boundingClientRect()
+        query.exec((res) => {
+          this.dropDown(windowHeight - res[0].bottom, res[0].left - 10)
+        })
+      }
+    }
+    dropDown(y, x) {
+      const borderAnimation = wepy.createAnimation({
+        timingFunction: 'ease'
+      })
+      const innerAnimation = wepy.createAnimation({
+        timingFunction: 'ease'
+      })
+      borderAnimation.translateY(-y).opacity(1).step({
+        duration: 1
+      })
+      innerAnimation.translateX(x).step({
+        duration: 1
+      })
+      this.borderAnimationData = borderAnimation.export()
+      this.innerAnimationData = innerAnimation.export()
+      this.$apply()
+      setTimeout(() => {
+        borderAnimation.translateY(0).opacity(0).step({
+          duration: 800
+        })
+        innerAnimation.translateX(0).step({
+          duration: 400
+        })
+        this.borderAnimationData = borderAnimation.export()
+        this.innerAnimationData = innerAnimation.export()
+        this.$apply()
+      }, 100)
+    }
+  }
+</script>
+
+<style lang="less" scoped>
+  @import '../../styles/variable.less';
+  .cart {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    z-index: 50;
+    width: 100%;
+    height: 110rpx;
+    .content {
+      display: flex;
+      background: #4e4e4e;
+      font-size: 0;
+      color: rgba(255, 255, 255, 0.4);
+    }
+    .content-left {
+      flex: 1;
+      .logo-wrapper {
+        display: inline-block;
+        vertical-align: top;
+        position: relative;
+        top: -20rpx;
+        margin: 0 16rpx 0 22rpx;
+        padding: 2rpx;
+        width: 120rpx;
+        height: 120rpx;
+        box-sizing: border-box;
+        box-shadow: 0 0 4rpx #8a8280;
+        border-radius: 50%;
+        background-color: #ffffff;
+        .logo {
+          display: flex;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          justify-content: center;
+          align-items: center;
+          image {
+            width: 44rpx;
+            height: 50rpx;
+          }
+        }
+        .num {
+          position: absolute;
+          top: 0;
+          right: 0;
+          min-width: 32rpx;
+          max-width: 48rpx;
+          height: 32rpx;
+          line-height: 32rpx;
+          text-align: center;
+          border-radius: 50%;
+          font-size: 10rpx;
+          font-weight: 700;
+          color: #fff;
+          background-color: rgb(240, 20, 20);
+          box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.4)
+        }
+      }
+    }
+    .content-right {
+      width: 290rpx;
+      .pay {
+        height: 110rpx;
+        line-height: 110rpx;
+        text-align: center;
+        font-size: 18px;
+        font-weight: 700;
+      }
+      .not-enough {
+        background-color: #c6c8c9;
+        color: #999999;
+      }
+      .enough {
+        background-color: #ffda09;
+        color: #222222;
+      }
+    }
+    .ball-container {
+      .ball {
+        position: fixed;
+        left: 32rpx;
+        bottom: 20rpx;
+        z-index: 200;
+        transition: all 0.4s cubic-bezier(0.49, -0.29, 0.75, 0.41);
+        opacity: 0;
+        .inner {
+          width: 32rpx;
+          height: 32rpx;
+          border-radius: 50%;
+          background-color: #ffda09;
+        }
+      }
+    }
+  }
+</style>

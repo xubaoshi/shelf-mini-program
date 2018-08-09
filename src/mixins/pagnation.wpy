@@ -1,0 +1,58 @@
+
+<script>
+  import wepy from 'wepy'
+  import tip from '@/utils/tip'
+
+  export default class pagenation extends wepy.mixin {
+    config = {}
+    components = {}
+    methods = {}
+    events = {}
+    data = {
+      isPageLoading: false,
+      isPageEmpty: false,
+      isPageReachBottom: false
+    }
+
+    async next() {
+      try {
+        const params = this.params ? this.params() : {}
+        if (this.page.reachBottom) {
+          return
+        }
+        this.isPageLoading = true
+        await this.page.next(params)
+        this.isPageReachBottom = this.page.reachBottom
+        this.isPageEmpty = this.page.list.length === 0
+        if (this.onPageLoad) {
+          this.onPageLoad()
+        }
+      } finally {
+        this.isPageLoading = false
+        this.init = true
+        this.$apply()
+        tip.loaded()
+      }
+    }
+
+    async onReachBottom() {
+      await this.next()
+    }
+
+    async reload() {
+      if (this.page && this.page.reset) {
+        this.page.reset()
+        await this.next()
+        wepy.stopPullDownRefesh()
+      }
+    }
+
+    async onPullDownRefresh() {
+      await this.reload()
+    }
+
+    async update() {
+      await this.reload()
+    }
+  }
+</script>
