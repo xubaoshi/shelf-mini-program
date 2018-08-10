@@ -6,11 +6,11 @@ module.exports = {
   eslint: true,
   cliLogs: !prod,
   build: {
-    web: {
-      htmlTemplate: path.join('src', 'index.template.html'),
-      htmlOutput: path.join('web', 'index.html'),
-      jsOutput: path.join('web', 'index.js')
-    }
+    // web: {
+    //   htmlTemplate: path.join('src', 'index.template.html'),
+    //   htmlOutput: path.join('web', 'index.html'),
+    //   jsOutput: path.join('web', 'index.js')
+    // }
   },
   resolve: {
     alias: {
@@ -48,9 +48,6 @@ module.exports = {
 }
 
 if (prod) {
-  // 压缩sass
-  // module.exports.compilers['sass'] = {outputStyle: 'compressed'}
-
   // 压缩js
   module.exports.plugins = {
     uglifyjs: {
